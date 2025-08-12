@@ -1,0 +1,180 @@
+:root {
+  --bg-primary: linear-gradient(120deg, #0f2027 0%, #2c5364 100%);
+  --bg-card: rgba(30,41,59,0.7);
+  --border-color: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #38bdf8;
+  --accent-color: #2563eb;
+  --accent-hover: #0ea5e9;
+  --error-color: #e53e3e;
+  --success-color: #38bdf8;
+}
+
+.authform-bg {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  color: var(--text-primary);
+}
+
+.authform-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(56, 189, 248, 0.10);
+  padding: 2.5rem 2rem 2rem 2rem;
+  width: 100%;
+  max-width: 370px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  animation: fadeIn 1s;
+  color: var(--text-primary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(40px);}
+  to { opacity: 1; transform: none;}
+}
+
+.authform-card h2 {
+  text-align: center;
+  color: #38bdf8;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  letter-spacing: -1px;
+}
+
+.authform-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.authform-input-group label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.authform-input-group input {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+  background: rgba(255,255,255,0.15);
+  color: var(--text-primary);
+  transition: border 0.2s;
+}
+
+.authform-input-group input:focus {
+  border: 1.5px solid var(--text-secondary);
+  outline: none;
+  background: rgba(56,189,248,0.08);
+}
+
+.authform-btn {
+  background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
+  color: var(--text-dark);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow-primary);
+  transition: all 0.2s;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.authform-btn:hover {
+  background: linear-gradient(90deg, #818cf8 0%, #38bdf8 100%);
+  color: #fff;
+  transform: scale(1.05) scale(1.04);
+}
+
+.authform-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.authform-error {
+  color: var(--error-color);
+  background: #fff5f5;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.98rem;
+}
+
+.authform-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.98rem;
+  color: var(--text-primary);
+}
+
+.authform-link {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.authform-link:hover {
+  color: #818cf8;
+}
+
+/* Botones Auth - Colores únicos */
+.auth-container .login-btn,
+.auth-container .submit-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+}
+
+.auth-container .login-btn:hover,
+.auth-container .submit-btn:hover {
+  background: linear-gradient(135deg, #3730a3, #6d28d9);
+}
+
+.auth-container .register-btn {
+  background: linear-gradient(135deg, #059669, #0d9488);
+  color: white;
+}
+
+.auth-container .register-btn:hover {
+  background: linear-gradient(135deg, #047857, #0f766e);
+}
+
+/* Propiedades comunes para todos los botones auth */
+.auth-container .login-btn,
+.auth-container .register-btn,
+.auth-container .submit-btn {
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.auth-container .login-btn:hover,
+.auth-container .register-btn:hover,
+.auth-container .submit-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

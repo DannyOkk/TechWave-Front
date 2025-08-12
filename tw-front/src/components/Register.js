@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./Authform.css";
+import { useNavigate } from "react-router-dom";
+import "../styles/components/Authform.css"; // Actualizada la ruta
 
 const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
   const [username, setUsername] = useState("");
@@ -8,6 +9,15 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleGoToLogin = () => {
+    navigate("/login");
+  };
+
+  const handleGoToHome = () => {
+    navigate("/");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +48,8 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
 
       if (response.ok) {
         // Registro exitoso
-        onRegisterSuccess();
+        onRegisterSuccess(); // Mostrar mensaje
+        navigate("/login"); // Navegar al login
       } else {
         // Error del servidor
         if (data.username) {
@@ -60,7 +71,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
   };
 
   return (
-    <div className="authform-bg">
+    <div className="auth-container authform-bg"> {/* ⭐ SOLO AGREGAR auth-container */}
       <form className="authform-card" onSubmit={handleSubmit}>
         <h2>Registrarse</h2>
         <div className="authform-input-group">
@@ -110,7 +121,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
           <button
             type="button"
             className="authform-link"
-            onClick={onSwitchToLogin}
+            onClick={handleGoToLogin}
           >
             Inicia sesión aquí
           </button>
