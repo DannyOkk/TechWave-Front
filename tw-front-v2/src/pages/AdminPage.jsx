@@ -98,6 +98,10 @@ function AdminDashboard(){
     mutationFn: (id)=> orderService.cancel(id),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
+  const deleteOrderM = useMutation({
+    mutationFn: (id)=> orderService.remove(id),
+    onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
+  })
 
   return (
     <div className="v-stack" style={{gap:12}}>
@@ -210,7 +214,7 @@ function AdminDashboard(){
                   </div>
                   <div className="h-stack" style={{gap:6}}>
                     <span className="badge">Total: ${o.total}</span>
-                    <select className="input" defaultValue={o.estado} onChange={(e)=> updateOrderM.mutate({ id:o.id, payload:{ estado: e.target.value } })}>
+                    <select className="input" defaultValue={o.estado} disabled={o.estado==='cancelado'} onChange={(e)=> updateOrderM.mutate({ id:o.id, payload:{ estado: e.target.value } })}>
                       <option value="pendiente">pendiente</option>
                       <option value="pagado">pagado</option>
                       <option value="preparando">preparando</option>
@@ -218,7 +222,12 @@ function AdminDashboard(){
                       <option value="entregado">entregado</option>
                       <option value="cancelado">cancelado</option>
                     </select>
-                    <button className="btn" disabled={cancelOrderM.isLoading} onClick={()=> cancelOrderM.mutate(o.id)}>Cancelar</button>
+                    {o.estado !== 'cancelado' && (
+                      <button className="btn" disabled={cancelOrderM.isLoading} onClick={()=> cancelOrderM.mutate(o.id)}>Cancelar</button>
+                    )}
+                    {o.estado === 'cancelado' && (
+                      <button className="btn" style={{background:'tomato', color:'#fff'}} disabled={deleteOrderM.isLoading} onClick={()=> { if (window.confirm('¿Eliminar pedido cancelado? Esta acción es irreversible.')) deleteOrderM.mutate(o.id) }}>Eliminar</button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -6,6 +6,7 @@ export default function CartDrawer({ open, onClose }){
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lastOrderId, setLastOrderId] = useState(null)
 
   const load = async ()=>{
     try {
@@ -17,7 +18,7 @@ export default function CartDrawer({ open, onClose }){
     } finally { setLoading(false) }
   }
 
-  useEffect(()=>{ if (open) load() }, [open])
+  useEffect(()=>{ if (open) { load(); } }, [open])
 
   const changeQty = async (itemId, delta)=>{
     const item = cart?.items?.find(i=> i.id===itemId)
@@ -36,19 +37,27 @@ export default function CartDrawer({ open, onClose }){
     try { setActionLoading(true); await cartService.removeItem(itemId); await load() } finally { setActionLoading(false) }
   }
 
-  const clear = async ()=>{ try { setActionLoading(true); await cartService.clearCart(); await load() } finally { setActionLoading(false) } }
-  const doCheckout = async ()=>{
+  const clear = async ()=>{ try { setActionLoading(true); await cartService.clearCart(); await load(); setLastOrderId(null) } finally { setActionLoading(false) } }
+  const createOrder = async ()=>{
     try {
       setActionLoading(true)
       const res = await cartService.checkout()
-      // Aquí podríamos redirigir a /orders/{id} si se expone ruta; por ahora cerrar y reset
+      const oid = res?.pedido_id || res?.id || null
+      setLastOrderId(oid)
       await load()
-      alert('Pedido creado: #' + (res?.pedido_id || '?'))
-      onClose?.()
-    } catch (e){
-      // mostrar error simple
-      alert('No se pudo completar el checkout')
+      alert('Pedido creado: #' + (oid || '?') + '\nPuedes proceder a pagar cuando quieras.')
+    } catch {
+      alert('No se pudo crear el pedido')
     } finally { setActionLoading(false) }
+  }
+  const goToPay = async ()=>{
+    if (!lastOrderId){
+      alert('Primero crea el pedido antes de ir a pagar.')
+      return
+    }
+    // Placeholder de futura simulación de pago
+    alert('Simulación de pago pendiente de implementar para pedido #' + lastOrderId)
+    onClose?.()
   }
   return (
     <>
@@ -87,9 +96,15 @@ export default function CartDrawer({ open, onClose }){
           )}
         </div>
         <footer>
-          <div className="h-stack" style={{gap:8}}>
-            <button className="btn" style={{width:'40%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={clear}>Vaciar</button>
-            <button className="btn btn-primary" style={{width:'60%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={doCheckout}>Ir a pagar</button>
+          <div className="v-stack" style={{gap:8, width:'100%'}}>
+            <div style={{fontSize:12, opacity:.75}}>
+              La dirección de envío se gestiona en tu perfil. Se requerirá durante el pago si falta.
+            </div>
+            <div className="h-stack" style={{gap:8, flexWrap:'wrap'}}>
+              <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={clear}>Vaciar</button>
+              <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={createOrder}>Crear pedido</button>
+              <button className="btn btn-primary" style={{flex:'1 1 30%'}} disabled={actionLoading || !lastOrderId} onClick={goToPay}>Ir a pagar</button>
+            </div>
           </div>
         </footer>
       </aside>

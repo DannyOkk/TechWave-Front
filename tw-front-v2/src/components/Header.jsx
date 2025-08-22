@@ -1,15 +1,16 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import SearchBar from './SearchBar'
 import MiniCart from './MiniCart'
 import ThemeToggle from './ThemeToggle'
 import CartDrawer from './CartDrawer'
-import FavoritesDrawer from './FavoritesDrawer'
 import NotificationsDrawer from './NotificationsDrawer'
+import FavoritesDrawer from './FavoritesDrawer'
 import { authService } from '../services/authService'
-import { useQuery } from '@tanstack/react-query'
 import { categoryService } from '../services/categoryService'
 import { orderService } from '../services/orderService'
+import useFavorites from '../hooks/useFavorite'
 
 export default function Header(){
   const [open, setOpen] = useState(false)
@@ -20,8 +21,19 @@ export default function Header(){
     if (r) return r;
     try { return (JSON.parse(localStorage.getItem('user_data'))||{}).role || null } catch { return null }
   })
+  const { count: favCount } = useFavorites()
+  const queryClient = useQueryClient()
   const { data: categories } = useQuery({ queryKey:['categories-header'], queryFn: categoryService.getAll })
   const { data: myOrders } = useQuery({ queryKey:['notif-my-orders'], queryFn: orderService.myOrders, enabled: isAuth })
+  // Invalidar notificaciones (órdenes pendientes) cuando se despacha evento orders-changed o al recuperar foco
+  useEffect(()=>{
+    const refresh = () => { if (isAuth) queryClient.invalidateQueries({ queryKey:['notif-my-orders'] }) }
+    window.addEventListener('orders-changed', refresh)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('auth-changed', refresh)
+    window.addEventListener('storage', refresh)
+    return ()=> { window.removeEventListener('orders-changed', refresh); window.removeEventListener('focus', refresh); window.removeEventListener('auth-changed', refresh); window.removeEventListener('storage', refresh) }
+  }, [queryClient, isAuth])
   const pendingCount = Array.isArray(myOrders) ? myOrders.filter(o=> o.estado==='pendiente').length : 0
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -99,7 +111,7 @@ export default function Header(){
           <div className="search-wrap">
             <SearchBar />
           </div>
-          <button className="btn btn-ghost h-stack" style={{gap:6}} onClick={()=> { setFavOpen(true); setMenuOpen(false); setCatOpen(false); }} aria-label="Abrir favoritos">❤ <span style={{opacity:.85}}>0</span></button>
+          <button className="btn btn-ghost h-stack" style={{gap:6}} onClick={()=> { setFavOpen(true); setMenuOpen(false); setCatOpen(false); }} aria-label="Abrir favoritos">❤ <span style={{opacity:.85}}>{favCount}</span></button>
       <MiniCart onOpen={()=> { setOpen(true); setMenuOpen(false); setCatOpen(false); }} />
           <ThemeToggle />
           {isAuth && (

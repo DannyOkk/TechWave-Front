@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { orderService } from '../services/orderService'
 
@@ -6,17 +6,22 @@ export default function NotificationsDrawer({ open, onClose }){
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(()=>{
-    const load = async ()=>{
-      if (!open) return
-      try {
-        setLoading(true)
-        const data = await orderService.myOrders()
-        setOrders(Array.isArray(data) ? data.filter(o=> o.estado==='pendiente') : [])
-      } finally { setLoading(false) }
-    }
-    load()
+  const fetchOrders = useCallback(async () => {
+    if (!open) return
+    try {
+      setLoading(true)
+      const data = await orderService.myOrders()
+      setOrders(Array.isArray(data) ? data.filter(o=> o.estado==='pendiente') : [])
+    } finally { setLoading(false) }
   }, [open])
+
+  useEffect(()=> { fetchOrders() }, [fetchOrders])
+  // Escuchar eventos globales para refrescar cuando otro componente cambie pedidos
+  useEffect(()=>{
+    const handler = () => fetchOrders()
+    window.addEventListener('orders-changed', handler)
+    return () => window.removeEventListener('orders-changed', handler)
+  }, [fetchOrders])
 
   return (
     <>
@@ -39,11 +44,11 @@ export default function NotificationsDrawer({ open, onClose }){
                   </div>
                   <div className="h-stack" style={{gap:6}}>
                     <Link className="btn" to={`/orders/${o.id}`}>Ver detalle</Link>
-                    <button className="btn btn-primary" onClick={async()=>{ try { await orderService.createPayment(o.id); alert('Pago iniciado'); } catch { alert('No se pudo iniciar el pago') } }}>Completar pago</button>
+                    <button className="btn btn-primary" onClick={async()=>{ try { await orderService.createPayment(o.id); window.dispatchEvent(new Event('orders-changed')); alert('Pago iniciado'); } catch { alert('No se pudo iniciar el pago') } }}>Completar pago</button>
                     <button className="btn" onClick={async()=>{
-							if (!window.confirm('¿Cancelar este pedido?')) return
-							try { await orderService.cancel(o.id); setOrders(prev=> prev.filter(x=> x.id!==o.id)) } catch { alert('No se pudo cancelar') }
-						}}>
+            if (!window.confirm('¿Cancelar este pedido?')) return
+            try { await orderService.cancel(o.id); setOrders(prev=> prev.filter(x=> x.id!==o.id)); window.dispatchEvent(new Event('orders-changed')); } catch { alert('No se pudo cancelar') }
+          }}>
                       Cancelar
                     </button>
                   </div>
