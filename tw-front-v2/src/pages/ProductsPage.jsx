@@ -66,7 +66,7 @@ export default function ProductsPage(){
       <div key={p.id} className="card" style={{padding:12, width:280}}>
             <div className="relative">
               <Link to={`/products/${p.id}`}>
-                <img src={'/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
+                <img src={p.imagen_url || '/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
               </Link>
               <button
                 className="fav-btn"

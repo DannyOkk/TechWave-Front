@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { cartService } from '../services/cartService'
+import { useNavigate } from 'react-router-dom'
 
 export default function CartDrawer({ open, onClose }){
+  const navigate = useNavigate()
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
-  const [lastOrderId, setLastOrderId] = useState(null)
+  const [, setLastOrderId] = useState(null)
 
   const load = async ()=>{
     try {
@@ -51,13 +53,21 @@ export default function CartDrawer({ open, onClose }){
     } finally { setActionLoading(false) }
   }
   const goToPay = async ()=>{
-    if (!lastOrderId){
-      alert('Primero crea el pedido antes de ir a pagar.')
-      return
-    }
-    // Placeholder de futura simulación de pago
-    alert('Simulación de pago pendiente de implementar para pedido #' + lastOrderId)
-    onClose?.()
+    try {
+      setActionLoading(true)
+      // Crear pedido desde el carrito y redirigir a la página de pago
+      const res = await cartService.checkout()
+      const oid = res?.pedido_id || res?.id
+      if (!oid) {
+        alert('No se pudo crear el pedido')
+        return
+      }
+      setLastOrderId(oid)
+      onClose?.()
+      navigate(`/orders/${oid}/pay`)
+    } catch (e){
+      alert(e?.response?.data?.error || 'No se pudo crear el pedido')
+    } finally { setActionLoading(false) }
   }
   return (
     <>
@@ -103,7 +113,7 @@ export default function CartDrawer({ open, onClose }){
             <div className="h-stack" style={{gap:8, flexWrap:'wrap'}}>
               <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={clear}>Vaciar</button>
               <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={createOrder}>Crear pedido</button>
-              <button className="btn btn-primary" style={{flex:'1 1 30%'}} disabled={actionLoading || !lastOrderId} onClick={goToPay}>Ir a pagar</button>
+              <button className="btn btn-primary" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={goToPay}>Ir a pagar</button>
             </div>
           </div>
         </footer>

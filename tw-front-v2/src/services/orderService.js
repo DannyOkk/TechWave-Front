@@ -33,7 +33,13 @@ const remove = async (id) => {
   return data;
 };
 
-export const orderService = { myOrders, getAll, getById, update, cancel, remove };
+const forceDelete = async (id) => {
+  const { data } = await http.post(`/market/model/orders/${id}/force_delete/`);
+  try { window.dispatchEvent(new Event('orders-changed')); } catch {}
+  return data;
+};
+
+export const orderService = { myOrders, getAll, getById, update, cancel, remove, forceDelete };
 export default orderService;
 // Extensión: crear pago para un pedido
 export const createPayment = async (pedidoId, metodo = 'tarjeta') => {

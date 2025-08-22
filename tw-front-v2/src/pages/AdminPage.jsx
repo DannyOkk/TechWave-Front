@@ -5,7 +5,10 @@ import { adminService } from '../services/adminService'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
 import { orderService } from '../services/orderService'
+import { paymentService } from '../services/paymentService'
+import { API_ORIGIN } from '../services/api'
 import Modal from '../components/Modal'
+import ImageLightbox from '../components/ImageLightbox'
 
 export default function AdminPage(){
   const navigate = useNavigate()
@@ -94,12 +97,24 @@ function AdminDashboard(){
     mutationFn: ({ id, payload })=> orderService.update(id, payload),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
+  // Pagos
+  const [payFilter, setPayFilter] = useState('todos') // default mostrar todos
+  const paysQ = useQuery({
+    queryKey:['admin-pays', payFilter],
+    queryFn: ()=> payFilter==='todos' ? paymentService.list() : paymentService.list({ estado: payFilter })
+  })
+  const approveM = useMutation({ mutationFn: (id)=> paymentService.approve(id), onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-pays'] }) })
+  const rejectM = useMutation({ mutationFn: (id)=> paymentService.reject(id), onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-pays'] }) })
   const cancelOrderM = useMutation({
     mutationFn: (id)=> orderService.cancel(id),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
   const deleteOrderM = useMutation({
     mutationFn: (id)=> orderService.remove(id),
+    onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
+  })
+  const forceDeleteOrderM = useMutation({
+    mutationFn: (id)=> orderService.forceDelete(id),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
 
@@ -111,6 +126,7 @@ function AdminDashboard(){
         <button className={`btn ${tab==='productos'?'btn-primary':''}`} onClick={()=> setTab('productos')}>Productos</button>
         <button className={`btn ${tab==='categorias'?'btn-primary':''}`} onClick={()=> setTab('categorias')}>Categorías</button>
         <button className={`btn ${tab==='pedidos'?'btn-primary':''}`} onClick={()=> setTab('pedidos')}>Pedidos</button>
+  <button className={`btn ${tab==='pagos'?'btn-primary':''}`} onClick={()=> setTab('pagos')}>Pagos</button>
       </div>
 
       {tab==='usuarios' && (
@@ -228,11 +244,31 @@ function AdminDashboard(){
                     {o.estado === 'cancelado' && (
                       <button className="btn" style={{background:'tomato', color:'#fff'}} disabled={deleteOrderM.isLoading} onClick={()=> { if (window.confirm('¿Eliminar pedido cancelado? Esta acción es irreversible.')) deleteOrderM.mutate(o.id) }}>Eliminar</button>
                     )}
+                    {o.estado !== 'cancelado' && (
+                      <button className="btn" style={{background:'#a00', color:'#fff'}} disabled={forceDeleteOrderM.isLoading} onClick={()=> { if (window.confirm('¿Forzar eliminación del pedido? Se restaurará el stock y se cerrarán pagos abiertos.')) forceDeleteOrderM.mutate(o.id) }}>Forzar eliminar</button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {tab==='pagos' && (
+        <div className="card" style={{padding:12}}>
+          <h3 style={{marginTop:0}}>Pagos</h3>
+          <div className="h-stack" style={{gap:8, marginBottom:8}}>
+            <label>Filtrar por estado</label>
+            <select className="input" value={payFilter} onChange={(e)=> setPayFilter(e.target.value)}>
+              <option value="en_revision">En revisión</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="completado">Completado</option>
+              <option value="fallido">Cancelado</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+          <PaymentsSection title={payFilter==='todos' ? 'Todos' : payFilter} query={paysQ} onApprove={approveM.mutate} onReject={rejectM.mutate} showActions={payFilter==='en_revision'} />
         </div>
       )}
 
@@ -280,6 +316,61 @@ function UserModal({ modal, setModal, onCreate, onUpdate }){
   )
 }
 
+function PaymentsSection({ title, query, onApprove, onReject, showActions=false }){
+  const list = Array.isArray(query.data) ? query.data : (query.data?.results || [])
+  const [lightbox, setLightbox] = useState({ open:false, src:'' })
+  return (
+    <div>
+      <h4 style={{marginBottom:8}}>{title}</h4>
+      {query.isLoading && <div>Cargando…</div>}
+      {query.error && <div style={{color:'tomato'}}>Error al cargar</div>}
+      {!query.isLoading && !query.error && list.length===0 && <div style={{opacity:.75}}>Sin items</div>}
+      {!query.isLoading && !query.error && list.length>0 && (
+        <div className="v-stack" style={{gap:8}}>
+          {list.map(p=> (
+            <div key={p.id} className="h-stack" style={{justifyContent:'space-between', alignItems:'center'}}>
+              <div>
+                <div><strong>Pago #{p.id}</strong> · Pedido #{p.pedido} · {p.metodo} · <span className="badge">{p.estado}</span></div>
+                <div style={{fontSize:12, opacity:.8}}>Monto: ${p.monto_pagado} · {p.pedido_detalle?.fecha && new Date(p.pedido_detalle.fecha).toLocaleString()}</div>
+                {(p.comprobante_archivo_url || p.comprobante_url) && (
+                  <div style={{marginTop:6}}>
+                    {p.comprobante_archivo_url && (p.comprobante_archivo_url.toLowerCase().endsWith('.pdf') ? (
+                      <a href={p.comprobante_archivo_url.startsWith('http') ? p.comprobante_archivo_url : `${API_ORIGIN}${p.comprobante_archivo_url}`} target="_blank" rel="noreferrer">Ver PDF</a>
+                    ) : (
+                      (()=>{
+                        const src = p.comprobante_archivo_url.startsWith('http') ? p.comprobante_archivo_url : `${API_ORIGIN}${p.comprobante_archivo_url}`
+                        return (
+                          <img
+                            alt="comprobante"
+                            src={src}
+                            title="Click para ver grande"
+                            onClick={()=> setLightbox({ open:true, src })}
+                            style={{maxWidth:200, maxHeight:120, objectFit:'contain', border:'1px solid #eee', cursor:'zoom-in'}}
+                          />
+                        )
+                      })()
+                    ))}
+                    {!p.comprobante_archivo_url && p.comprobante_url && (
+                      <a href={p.comprobante_url} target="_blank" rel="noreferrer">Ver comprobante</a>
+                    )}
+                  </div>
+                )}
+              </div>
+              {showActions && (
+                <div className="h-stack" style={{gap:6}}>
+                  <button className="btn btn-primary" onClick={()=> onApprove?.(p.id)}>Aprobar</button>
+                  <button className="btn" onClick={()=> onReject?.(p.id)}>Rechazar</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <ImageLightbox open={lightbox.open} src={lightbox.src} onClose={()=> setLightbox({ open:false, src:'' })} />
+    </div>
+  )
+}
+
 function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
   const isOpen = modal.open && (modal.type==='product-create' || modal.type==='product-edit')
   const isEdit = modal.type==='product-edit'
@@ -287,7 +378,9 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
   const close = ()=> setModal({ type:null, open:false, payload:null })
   const submit = (e)=>{
     e.preventDefault()
-    const formObj = Object.fromEntries(new FormData(e.currentTarget).entries())
+    const fd = new FormData(e.currentTarget)
+    const formObj = Object.fromEntries(fd.entries())
+    const imagen = fd.get('imagen')
     // Normalizar tipos
     const payload = {
       nombre: formObj.nombre,
@@ -296,6 +389,7 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
       stock: parseInt(formObj.stock||0, 10),
       categoria: parseInt(formObj.categoria, 10),
     }
+    if (imagen && imagen.size) payload.imagen = imagen
     if (isEdit) onUpdate(data.id, payload); else onCreate(payload)
   }
   return (
@@ -314,6 +408,13 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
           <option value="">Categoría…</option>
           {(categories||[]).map(c=> <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
+        <div className="v-stack" style={{gap:6}}>
+          <label>Imagen del producto</label>
+          <input className="input" type="file" name="imagen" accept="image/*" />
+          {(data.imagen_url) && (
+            <img alt="preview" src={data.imagen_url} style={{maxWidth:200, border:'1px solid var(--border-light)'}} />
+          )}
+        </div>
       </form>
     </Modal>
   )

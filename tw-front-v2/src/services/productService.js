@@ -19,11 +19,26 @@ export const productService = {
     }
   },
   create: async (payload) => {
-    const { data } = await http.post('/market/model/products/', payload);
+    // Payload puede ser { nombre, descripcion, precio, stock, categoria, imagen? }
+    let body = payload; let config={}
+    if (payload?.imagen instanceof File){
+      const fd = new FormData()
+      Object.entries(payload).forEach(([k,v])=>{ if (k==='imagen') return; fd.append(k, v) })
+      fd.append('imagen', payload.imagen)
+      body = fd; config.headers = { 'Content-Type': 'multipart/form-data' }
+    }
+    const { data } = await http.post('/market/model/products/', body, config);
     return data;
   },
   update: async (id, payload) => {
-    const { data } = await http.patch(`/market/model/products/${id}/`, payload);
+    let body = payload; let config={}
+    if (payload?.imagen instanceof File){
+      const fd = new FormData()
+      Object.entries(payload).forEach(([k,v])=>{ if (k==='imagen') return; fd.append(k, v) })
+      fd.append('imagen', payload.imagen)
+      body = fd; config.headers = { 'Content-Type': 'multipart/form-data' }
+    }
+    const { data } = await http.patch(`/market/model/products/${id}/`, body, config);
     return data;
   },
   remove: async (id) => {
