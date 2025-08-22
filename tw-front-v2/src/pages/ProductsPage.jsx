@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
 import { cartService } from '../services/cartService';
+import useFavorites from '../hooks/useFavorite';
 
 export default function ProductsPage(){
   const [addingId, setAddingId] = useState(null);
@@ -18,6 +19,7 @@ export default function ProductsPage(){
     queryFn: productService.getAll,
   });
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: categoryService.getAll });
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
 
   const filtered = useMemo(()=>{
     let list = Array.isArray(products) ? products : [];
@@ -64,9 +66,16 @@ export default function ProductsPage(){
       <div key={p.id} className="card" style={{padding:12, width:280}}>
             <div className="relative">
               <Link to={`/products/${p.id}`}>
-                <img src={'/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
+                <img src={p.imagen_url || '/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
               </Link>
-              <button className="fav-btn" title="Agregar a favoritos">❤</button>
+              <button
+                className="fav-btn"
+                title={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                aria-label={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                aria-pressed={isFavorite(p.id)}
+                onClick={async (e)=> { e.preventDefault(); e.stopPropagation(); await toggleFavorite(p.id); }}
+                style={isFavorite(p.id) ? { background:'rgba(0,0,0,.5)', color:'#ff4d4f', borderColor:'rgba(255,77,79,.6)' } : undefined}
+              >❤</button>
             </div>
             <div style={{marginTop:10}}>
               <div style={{fontWeight:600}}><Link to={`/products/${p.id}`}>{p.nombre}</Link></div>

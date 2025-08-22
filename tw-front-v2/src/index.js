@@ -14,6 +14,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import PaymentPage from './pages/PaymentPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import ErrorPage from './pages/ErrorPage';
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
       { path: 'register', element: <RegisterPage /> },
   { path: 'my-orders', element: <MyOrdersPage /> },
   { path: 'orders/:id', element: <OrderDetailPage /> },
+  { path: 'orders/:id/pay', element: <PaymentPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'admin', element: <AdminPage /> },
     ],
