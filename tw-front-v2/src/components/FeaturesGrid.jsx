@@ -6,9 +6,9 @@ export default function FeaturesGrid(){
     {t:'Soporte experto', d:'Te ayudamos a elegir y resolver cualquier duda.'},
   ]
   return (
-    <section className="row-cards" style={{marginTop:12}}>
+    <section className="row-cards features-tiles" style={{marginTop:12}}>
       {feats.map((f,i)=> (
-        <div key={i} className="card" style={{padding:16, width:280}}>
+        <div key={i} className="card" style={{padding:16}}>
           <div className="badge" style={{marginBottom:10}}>{f.t}</div>
           <div style={{opacity:.9}}>{f.d}</div>
         </div>

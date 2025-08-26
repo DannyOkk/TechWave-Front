@@ -47,29 +47,79 @@ export default function ProfilePage(){
     } finally { setSaving(false) }
   }
 
-  if (loading) return <div style={{padding:20}}>Cargando perfil…</div>
+  if (loading) return <div className="container" style={{padding:20}}>Cargando perfil…</div>
+
+  const initials = (form.first_name || form.username || '?')
+    .toString()
+    .trim()
+    .split(/\s+/)
+    .slice(0,2)
+    .map(s=> s.charAt(0).toUpperCase())
+    .join('')
 
   return (
-    <div className="v-stack" style={{gap:16, alignItems:'center'}}>
-      <h2 style={{marginBottom:0}}>Mi perfil</h2>
-      {error && <div style={{color:'tomato'}}>{error}</div>}
-      {ok && <div style={{color:'seagreen'}}>{ok}</div>}
-      <form onSubmit={handleSubmit} style={{display:'grid', gap:12, width:'100%', maxWidth:680}}>
-        <div className="h-stack" style={{gap:8}}>
-          <input className="input" name="first_name" placeholder="Nombre" value={form.first_name} onChange={handleChange} />
-          <input className="input" name="last_name" placeholder="Apellido" value={form.last_name} onChange={handleChange} />
+    <div className="container v-stack" style={{gap:16, padding:'16px 16px'}}>
+      <div className="profile-hero card" style={{padding:16, display:'flex', alignItems:'center', gap:14}}>
+        <div className="avatar-chip" aria-hidden>{initials || 'U'}</div>
+        <div style={{flex:1}}>
+          <h2 style={{margin:0}}>Mi perfil</h2>
+          <div style={{opacity:.8, fontSize:14}}>{form.email || '—'}</div>
         </div>
-        <input className="input" name="username" placeholder="Usuario" value={form.username} onChange={handleChange} />
-        <input className="input" name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} />
-        <input className="input" name="address" placeholder="Dirección" value={form.address} onChange={handleChange} />
-        <input className="input" name="phone" placeholder="Teléfono" value={form.phone} onChange={handleChange} />
-        <div className="h-stack" style={{gap:8, justifyContent:'center'}}>
-          <button className="btn" type="button" onClick={()=> navigate(-1)}>Volver</button>
-          <button className="btn btn-primary" type="submit" disabled={saving}>{saving? 'Guardando…' : 'Guardar cambios'}</button>
-        </div>
-      </form>
-      <div>
         <ChangePasswordButton />
+      </div>
+
+      {error && <div className="card" style={{padding:12, borderLeft:'3px solid tomato', color:'tomato'}}>{error}</div>}
+      {ok && <div className="card" style={{padding:12, borderLeft:'3px solid seagreen', color:'seagreen'}}>{ok}</div>}
+
+      <div className="profile-wrap">
+        <form onSubmit={handleSubmit} className="profile-card" aria-label="Editar perfil">
+          <h3 style={{marginTop:0}}>Datos personales</h3>
+          <div className="grid-2">
+            <div className="form-field">
+              <label htmlFor="pf_first_name">Nombre</label>
+              <input id="pf_first_name" className="input" name="first_name" value={form.first_name} onChange={handleChange} />
+            </div>
+            <div className="form-field">
+              <label htmlFor="pf_last_name">Apellido</label>
+              <input id="pf_last_name" className="input" name="last_name" value={form.last_name} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="form-field">
+              <label htmlFor="pf_username">Usuario</label>
+              <input id="pf_username" className="input" name="username" value={form.username} onChange={handleChange} />
+            </div>
+            <div className="form-field">
+              <label htmlFor="pf_email">Email</label>
+              <input id="pf_email" className="input" name="email" type="email" value={form.email} onChange={handleChange} />
+            </div>
+          </div>
+          <h3>Dirección y contacto</h3>
+          <div className="form-field">
+            <label htmlFor="pf_address">Dirección</label>
+            <input id="pf_address" className="input" name="address" value={form.address} onChange={handleChange} />
+          </div>
+          <div className="grid-2">
+            <div className="form-field">
+              <label htmlFor="pf_phone">Teléfono</label>
+              <input id="pf_phone" className="input" name="phone" value={form.phone} onChange={handleChange} />
+            </div>
+            <div />
+          </div>
+          <div className="h-stack" style={{gap:8, justifyContent:'flex-end'}}>
+            <button className="btn" type="button" onClick={()=> navigate(-1)}>Volver</button>
+            <button className="btn btn-primary" type="submit" disabled={saving}>{saving? 'Guardando…' : 'Guardar cambios'}</button>
+          </div>
+        </form>
+
+        <aside className="profile-card" aria-label="Consejos">
+          <h3 style={{marginTop:0}}>Consejos</h3>
+          <ul className="check-list">
+            <li>Usá un email activo para notificaciones.</li>
+            <li>Completá dirección y teléfono para agilizar envíos.</li>
+            <li>Podés cambiar tu contraseña cuando quieras.</li>
+          </ul>
+        </aside>
       </div>
     </div>
   )
@@ -116,9 +166,18 @@ function ChangePasswordButton(){
             {err && <div style={{color:'tomato', marginTop:8}}>{err}</div>}
             {msg && <div style={{color:'seagreen', marginTop:8}}>{msg}</div>}
             <form onSubmit={submit} style={{display:'grid', gap:10, marginTop:12}}>
-              <input name="current_password" type="password" className="input" placeholder="Contraseña actual" value={form.current_password} onChange={onChange} />
-              <input name="new_password" type="password" className="input" placeholder="Nueva contraseña" value={form.new_password} onChange={onChange} />
-              <input name="confirm" type="password" className="input" placeholder="Confirmar contraseña" value={form.confirm} onChange={onChange} />
+              <div className="form-field">
+                <label htmlFor="pw_current">Contraseña actual</label>
+                <input id="pw_current" name="current_password" type="password" className="input" value={form.current_password} onChange={onChange} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="pw_new">Nueva contraseña</label>
+                <input id="pw_new" name="new_password" type="password" className="input" value={form.new_password} onChange={onChange} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="pw_confirm">Confirmar contraseña</label>
+                <input id="pw_confirm" name="confirm" type="password" className="input" value={form.confirm} onChange={onChange} />
+              </div>
               <div className="h-stack" style={{gap:8, justifyContent:'flex-end'}}>
                 <button type="button" className="btn" onClick={()=> setOpen(false)}>Cerrar</button>
                 <button className="btn btn-primary" type="submit" disabled={loading}>{loading? 'Guardando…' : 'Guardar'}</button>

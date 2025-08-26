@@ -44,12 +44,27 @@ export default function RegisterPage(){
         {ok && <div style={{color:'seagreen', marginTop:8}}>{ok}</div>}
         <form style={{display:'grid', gap:10, marginTop:12}} onSubmit={handleSubmit}>
           <div className="h-stack" style={{gap:8}}>
-            <input className="input" name="first_name" placeholder="Nombre" value={form.first_name} onChange={handleChange} onKeyDown={focusNextOnEnter} />
-            <input className="input" name="last_name" placeholder="Apellido" value={form.last_name} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+            <div className="form-field" style={{flex:1}}>
+              <label htmlFor="rg_first_name">Nombre</label>
+              <input id="rg_first_name" className="input" name="first_name" value={form.first_name} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+            </div>
+            <div className="form-field" style={{flex:1}}>
+              <label htmlFor="rg_last_name">Apellido</label>
+              <input id="rg_last_name" className="input" name="last_name" value={form.last_name} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+            </div>
           </div>
-          <input className="input" name="username" placeholder="Usuario" value={form.username} onChange={handleChange} onKeyDown={focusNextOnEnter} />
-          <input className="input" name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} onKeyDown={focusNextOnEnter} />
-          <input className="input" name="password" type="password" placeholder="Contraseña" value={form.password} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          <div className="form-field">
+            <label htmlFor="rg_username">Usuario</label>
+            <input id="rg_username" className="input" name="username" value={form.username} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="rg_email">Email</label>
+            <input id="rg_email" className="input" name="email" type="email" value={form.email} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="rg_password">Contraseña</label>
+            <input id="rg_password" className="input" name="password" type="password" value={form.password} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          </div>
           <button className="btn btn-primary" type="submit" disabled={loading}>{loading? 'Creando…' : 'Registrarme'}</button>
         </form>
         <div className="center" style={{marginTop:10}}>

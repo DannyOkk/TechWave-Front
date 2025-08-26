@@ -15,23 +15,35 @@ export default function HomePage(){
           <a href="#acerca" className="btn btn-ghost">Acerca de</a>
         </div>
       </div>
-  <div className="row-cards section">
-        {[{t:"Laptops",img:"/assets/products/laptop.svg"},{t:"Audio",img:"/assets/products/audio.svg"},{t:"Gaming",img:"/assets/products/gaming.svg"},{t:"Accesorios",img:"/assets/products/accessory.svg"}].map(({t,img}) => (
-          <div key={t} className="card" style={{padding:14, width:280}}>
+  <div className="row-cards section categories-tiles">
+        {[
+          { t: 'Laptops', d: 'Rendimiento y portabilidad en un solo lugar.', src: '/assets/products/laptops.webp', fallback: '/assets/products/laptop.svg' },
+          { t: 'Audio', d: 'Sonido de calidad para cada experiencia.', src: '/assets/products/audio.png', fallback: '/assets/products/audio.svg' },
+          { t: 'Gaming', d: 'Equipa tu setup con lo último en juegos.', src: '/assets/products/gaming.webp', fallback: '/assets/products/gaming.svg' },
+          { t: 'Accesorios', d: 'Complementos que marcan la diferencia.', src: '/assets/products/accesorios.webp', fallback: '/assets/products/accessory.svg' },
+        ].map(({ t, d, src, fallback }) => (
+          <div key={t} className="card" style={{padding:14}}>
             <div className="relative">
-              <img src={img} alt={t} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
+              <img
+                src={src}
+                alt={t}
+                className="img-skel"
+                style={{objectFit:'cover', width:'100%'}}
+                onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src=fallback; }}
+                loading="lazy"
+              />
             </div>
             <h3 style={{marginTop:12, textAlign:'center'}}>{t}</h3>
-            <p style={{opacity:.8, marginTop:4, textAlign:'center'}}>Descubrí las mejores opciones.</p>
+            <p style={{opacity:.8, marginTop:4, textAlign:'center'}}>{d}</p>
           </div>
         ))}
   </div>
       <div className="section" style={{display:'grid', placeItems:'center'}}>
         <BrandsStrip />
       </div>
-      <div className="section" style={{display:'grid', placeItems:'center'}}>
+{/*       <div className="section" style={{display:'grid', placeItems:'center'}}>
         <PromoBanner />
-      </div>
+      </div> */}
       <div className="section" style={{display:'grid', placeItems:'center', width:'100%'}}>
         <div className="container">
           <Stats />

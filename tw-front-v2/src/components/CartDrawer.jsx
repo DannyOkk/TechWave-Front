@@ -9,6 +9,7 @@ export default function CartDrawer({ open, onClose }){
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [, setLastOrderId] = useState(null)
+  const isLogged = Boolean(localStorage.getItem('access_token'))
 
   const load = async ()=>{
     try {
@@ -107,14 +108,20 @@ export default function CartDrawer({ open, onClose }){
         </div>
         <footer>
           <div className="v-stack" style={{gap:8, width:'100%'}}>
-            <div style={{fontSize:12, opacity:.75}}>
-              La dirección de envío se gestiona en tu perfil. Se requerirá durante el pago si falta.
-            </div>
-            <div className="h-stack" style={{gap:8, flexWrap:'wrap'}}>
-              <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={clear}>Vaciar</button>
-              <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={createOrder}>Crear pedido</button>
-              <button className="btn btn-primary" style={{flex:'1 1 30%'}} disabled={actionLoading || !cart || (cart.items||[]).length===0} onClick={goToPay}>Ir a pagar</button>
-            </div>
+            {isLogged && (
+              <>
+                <div style={{fontSize:12, opacity:.75}}>
+                  La dirección de envío se gestiona en tu perfil. Se requerirá durante el pago si falta.
+                </div>
+                {(cart && (cart.items||[]).length>0) && (
+                  <div className="h-stack" style={{gap:8, flexWrap:'wrap'}}>
+                    <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading} onClick={clear}>Vaciar</button>
+                    <button className="btn" style={{flex:'1 1 30%'}} disabled={actionLoading} onClick={createOrder}>Crear pedido</button>
+                    <button className="btn btn-primary" style={{flex:'1 1 30%'}} disabled={actionLoading} onClick={goToPay}>Ir a pagar</button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </footer>
       </aside>

@@ -46,8 +46,14 @@ export default function LoginPage(){
         <h2 className="center" style={{marginTop:0}}>Ingresar</h2>
         {error && <div style={{color:'tomato', marginTop:8}}>{error}</div>}
         <form style={{display:'grid', gap:10, marginTop:12}} onSubmit={handleSubmit}>
-          <input className="input" name="username" placeholder="Usuario" value={form.username} onChange={handleChange} onKeyDown={focusNextOnEnter} />
-          <input className="input" name="password" type="password" placeholder="Contraseña" value={form.password} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          <div className="form-field">
+            <label htmlFor="lg_username">Usuario</label>
+            <input id="lg_username" className="input" name="username" value={form.username} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="lg_password">Contraseña</label>
+            <input id="lg_password" className="input" name="password" type="password" value={form.password} onChange={handleChange} onKeyDown={focusNextOnEnter} />
+          </div>
           <button className="btn btn-primary" type="submit" disabled={loading}>{loading? 'Ingresando…' : 'Entrar'}</button>
         </form>
         <div className="center" style={{marginTop:10}}>

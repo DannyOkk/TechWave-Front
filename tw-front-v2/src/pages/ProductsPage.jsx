@@ -8,7 +8,6 @@ import useFavorites from '../hooks/useFavorite';
 
 export default function ProductsPage(){
   const [addingId, setAddingId] = useState(null);
-  const [toast, setToast] = useState('');
   const [params, setParams] = useSearchParams();
   const sort = params.get('sort') || '';
   const cat = params.get('cat') || '';
@@ -36,11 +35,7 @@ export default function ProductsPage(){
 
   return (
     <div className="v-stack" style={{gap:16, alignItems:'center'}}>
-      {toast && (
-        <div style={{position:'fixed', top:10, right:10, background:'var(--bg-tertiary)', border:'1px solid var(--border-light)', color:'var(--text-primary)', padding:'8px 12px', borderRadius:10, zIndex:1000}}>
-          {toast}
-        </div>
-      )}
+  {/* Aviso visual se maneja con popover del carrito en header */}
       <div className="toolbar" style={{justifyContent:'center', width:'100%', maxWidth:900}}>
         <h2 style={{margin:'8px 0'}}>Productos</h2>
         <div className="h-stack" style={{gap:8}}>
@@ -61,9 +56,9 @@ export default function ProductsPage(){
       {isLoading && <div style={{textAlign:'center', padding:20}}>Cargando productos…</div>}
       {isError && <div style={{textAlign:'center', padding:20}}>Error al cargar productos.</div>}
     {!isLoading && !isError && (
-    <div className="row-cards">
+    <div className="row-cards products-tiles">
   {filtered.map((p)=> (
-      <div key={p.id} className="card" style={{padding:12, width:280}}>
+      <div key={p.id} className="card" style={{padding:12}}>
             <div className="relative">
               <Link to={`/products/${p.id}`}>
                 <img src={p.imagen_url || '/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
@@ -86,16 +81,11 @@ export default function ProductsPage(){
                 try {
                   setAddingId(p.id);
                   await cartService.addProduct(p.id, 1);
-                  setToast('Producto agregado al carrito');
+                  window.dispatchEvent(new CustomEvent('cart:add:success', { detail: { msg: 'Producto agregado al carrito' }}));
                 } catch (e){
-                  if (e?.response?.status === 401){
-                    setToast('Inicia sesión para agregar al carrito');
-                  } else {
-                    setToast('No se pudo agregar al carrito');
-                  }
+                  // Sin toast de error: mantener UI limpia
                 } finally {
                   setAddingId(null);
-                  setTimeout(()=> setToast(''), 2200);
                 }
               }}
             >{addingId===p.id? 'Agregando…' : 'Agregar'}</button>
