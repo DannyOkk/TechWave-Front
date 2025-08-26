@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './styles/globals/themes.css';
 import './styles/globals/base.css';
-import { createHashRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import RootLayout from './pages/RootLayout';
 import HomePage from './pages/HomePage';
@@ -20,7 +20,7 @@ import AdminPage from './pages/AdminPage';
 import ErrorPage from './pages/ErrorPage';
 import reportWebVitals from './reportWebVitals';
 
-const router = createHashRouter([
+const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
