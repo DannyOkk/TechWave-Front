@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { productService } from '../services/productService';
+import { API_ORIGIN } from '../services/api';
 import { categoryService } from '../services/categoryService';
 import { cartService } from '../services/cartService';
 import useFavorites from '../hooks/useFavorite';
@@ -61,7 +62,7 @@ export default function ProductsPage(){
       <div key={p.id} className="card" style={{padding:12}}>
             <div className="relative">
               <Link to={`/products/${p.id}`}>
-                <img src={p.imagen_url || '/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
+                <img src={(p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : '/assets/products/laptop.svg'))} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
               </Link>
               <button
                 className="fav-btn"

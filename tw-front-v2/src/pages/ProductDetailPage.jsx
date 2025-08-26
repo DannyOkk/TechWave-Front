@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query';
 import { productService } from '../services/productService';
 import { cartService } from '../services/cartService';
+import { API_ORIGIN } from '../services/api';
 import { useState } from 'react';
 
 export default function ProductDetailPage(){
@@ -19,6 +20,8 @@ export default function ProductDetailPage(){
   if (isLoading) return <div className="container" style={{padding:20}}>Cargando…</div>;
   if (isError || !data) return <div className="container" style={{padding:20}}>No se pudo cargar el producto.</div>;
 
+  const imageSrc = data?.imagen || (data?.imagen_url ? (data.imagen_url.startsWith('http') ? data.imagen_url : `${API_ORIGIN}${data.imagen_url}`) : '/assets/products/laptop.svg')
+
   return (
     <div className="container v-stack" style={{gap:16, padding:'16px 16px'}}>
       <div className="h-stack" style={{justifyContent:'space-between', alignItems:'center'}}>
@@ -28,7 +31,7 @@ export default function ProductDetailPage(){
   {/* Layout más vistoso: imagen grande + panel lateral con precio/acciones */}
   <div className="product-detail" style={{alignItems:'start'}}>
         <div className="card" style={{padding:12}}>
-          <img src={data.imagen_url || '/assets/products/laptop.svg'} alt={data.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
+          <img src={imageSrc} alt={data.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
         </div>
         <aside className="card" style={{padding:16, position:'sticky', top:80, alignSelf:'start'}}>
           <div className="v-stack" style={{gap:10}}>
