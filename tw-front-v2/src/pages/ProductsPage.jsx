@@ -61,9 +61,29 @@ export default function ProductsPage(){
   {filtered.map((p)=> (
       <div key={p.id} className="card" style={{padding:12}}>
             <div className="relative">
-              <Link to={`/products/${p.id}`}>
-                <img src={(p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : '/assets/products/laptop.svg'))} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
-              </Link>
+                    <Link to={`/products/${p.id}`} style={{display:'block'}}>
+                      <div
+                        style={{
+                          position:'relative',
+                          width:'100%',
+                          aspectRatio:'3 / 2', // mismo cuadro para todas las tarjetas
+                          background:'var(--bg-tertiary)',
+                          borderRadius:12,
+                          overflow:'hidden',
+                          display:'flex',
+                          alignItems:'center',
+                          justifyContent:'center'
+                        }}
+                      >
+                        <img
+                          src={(p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : '/assets/products/laptop.svg'))}
+                          alt={p.nombre}
+                          className="img-skel"
+                          style={{ width:'100%', height:'100%', objectFit:'contain' }}
+                          loading="lazy"
+                        />
+                      </div>
+                    </Link>
               <button
                 className="fav-btn"
                 title={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}

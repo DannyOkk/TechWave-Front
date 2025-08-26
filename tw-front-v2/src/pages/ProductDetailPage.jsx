@@ -46,7 +46,7 @@ export default function ProductDetailPage(){
                 {data.marca && <span className="badge" style={{background:'#eef6ff'}}>#{data.marca}</span>}
               </div>
             )}
-            <p style={{opacity:.9, lineHeight:1.6}}>{data.descripcion}</p>
+            <p style={{opacity:.9, lineHeight:1.6, whiteSpace: 'pre-wrap'}}>{data.descripcion}</p>
             {msg && <div className="card" style={{padding:10, background:'#eef6ff', color:'#1b6fcc'}}>{msg}</div>}
             <div className="h-stack" style={{gap:8, flexWrap:'wrap'}}>
               <button className="btn btn-primary" disabled={adding} onClick={async()=>{
