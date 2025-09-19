@@ -22,7 +22,7 @@ export default function ProductsPage(){
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
 
   // Helper: si la URL es de Cloudinary, inserta transformaciones para miniatura 4:3 sin recorte (con relleno)
-  const withCloudinaryPad = (url, w = 480, h = 360) => {
+  const withCloudinaryPad = (url, w = 300, h = 225) => {
     if (!url) return url;
     try {
       const u = new URL(url);
@@ -42,7 +42,7 @@ export default function ProductsPage(){
 
   const getCardImageSrc = (p) => {
     const raw = p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : null);
-    const transformed = withCloudinaryPad(raw, 480, 360);
+    const transformed = withCloudinaryPad(raw, 300, 225);
     return transformed || '/assets/products/laptop.svg';
   };
 

@@ -407,6 +407,7 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
     const fd = new FormData(e.currentTarget)
     const formObj = Object.fromEntries(fd.entries())
     const imagen = fd.get('imagen')
+    const clearImagen = formObj.clear_imagen === 'on' || formObj.clear_imagen === true || formObj.clear_imagen === 'true'
     // Normalizar tipos
     const payload = {
       nombre: formObj.nombre,
@@ -415,7 +416,13 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
       stock: parseInt(formObj.stock||0, 10),
       categoria: parseInt(formObj.categoria, 10),
     }
-    if (imagen && imagen.size) payload.imagen = imagen
+    // Prioridad: si selecciona una nueva imagen, se sube y se ignora el clear.
+    if (imagen && imagen.size) {
+      payload.imagen = imagen
+    } else if (isEdit && clearImagen) {
+      // Si está editando y marca "eliminar imagen" sin subir nueva, mandamos null para limpiar en backend
+      payload.imagen = null
+    }
     if (isEdit) onUpdate(data.id, payload); else onCreate(payload)
   }
   return (
@@ -453,7 +460,15 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
           <label htmlFor="ad_prod_img">Imagen del producto</label>
           <input id="ad_prod_img" className="input" type="file" name="imagen" accept="image/*" />
           {(data.imagen_url) && (
-            <img alt="preview" src={data.imagen_url} style={{maxWidth:200, border:'1px solid var(--border-light)'}} />
+            <div className="h-stack" style={{gap:12, alignItems:'flex-start'}}>
+              <img alt="preview" src={data.imagen_url} style={{maxWidth:200, border:'1px solid var(--border-light)'}} />
+              {isEdit && (
+                <label style={{display:'inline-flex', gap:6, alignItems:'center', cursor:'pointer'}} title="Eliminar la imagen actual">
+                  <input type="checkbox" name="clear_imagen" />
+                  <span>Eliminar imagen actual</span>
+                </label>
+              )}
+            </div>
           )}
         </div>
       </form>
