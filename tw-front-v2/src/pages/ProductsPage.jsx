@@ -21,6 +21,31 @@ export default function ProductsPage(){
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: categoryService.getAll });
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
 
+  // Helper: si la URL es de Cloudinary, inserta transformaciones para miniatura 4:3 sin recorte (con relleno)
+  const withCloudinaryPad = (url, w = 480, h = 360) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (!u.hostname.includes('res.cloudinary.com')) return url;
+      const parts = u.pathname.split('/');
+      const idx = parts.findIndex((p) => p === 'upload');
+      if (idx === -1) return url;
+      const trans = `w_${w},h_${h},c_pad,b_auto:predominant,q_auto,f_auto,dpr_auto`;
+      // Inserta transformaciones justo después de 'upload'
+      parts.splice(idx + 1, 0, trans);
+      u.pathname = parts.join('/');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  };
+
+  const getCardImageSrc = (p) => {
+    const raw = p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : null);
+    const transformed = withCloudinaryPad(raw, 480, 360);
+    return transformed || '/assets/products/laptop.svg';
+  };
+
   const filtered = useMemo(()=>{
     let list = Array.isArray(products) ? products : [];
     if (q) list = list.filter(p => `${p.nombre} ${p.descripcion}`.toLowerCase().includes(q.toLowerCase()));
@@ -61,28 +86,14 @@ export default function ProductsPage(){
   {filtered.map((p)=> (
       <div key={p.id} className="card" style={{padding:12}}>
             <div className="relative">
-                    <Link to={`/products/${p.id}`} style={{display:'block'}}>
-                      <div
-                        style={{
-                          position:'relative',
-                          width:'100%',
-                          aspectRatio:'3 / 2', // mismo cuadro para todas las tarjetas
-                          background:'var(--bg-tertiary)',
-                          borderRadius:12,
-                          overflow:'hidden',
-                          display:'flex',
-                          alignItems:'center',
-                          justifyContent:'center'
-                        }}
-                      >
-                        <img
-                          src={(p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : '/assets/products/laptop.svg'))}
-                          alt={p.nombre}
-                          className="img-skel"
-                          style={{ width:'100%', height:'100%', objectFit:'contain' }}
-                          loading="lazy"
-                        />
-                      </div>
+                    <Link to={`/products/${p.id}`}>
+                      <img
+                        src={getCardImageSrc(p)}
+                        alt={p.nombre}
+                        className="img-skel"
+                        style={{ width:'100%', borderRadius:12, display:'block' }}
+                        loading="lazy"
+                      />
                     </Link>
               <button
                 className="fav-btn"
