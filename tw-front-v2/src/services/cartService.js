@@ -1,8 +1,13 @@
 import http from './api';
 
-const getCart = async () => {
+const getCart = async (opts = {}) => {
   // GET /market/model/cart/ -> retorna el carrito del usuario
-  const { data } = await http.get('/market/model/cart/');
+  // Si opts.noRedirect === true, evitar redirección automática en 401
+  const config = {};
+  if (opts.noRedirect) {
+    config.headers = { ...(config.headers || {}), 'x-no-redirect': 'true' };
+  }
+  const { data } = await http.get('/market/model/cart/', config);
   return data;
 };
 

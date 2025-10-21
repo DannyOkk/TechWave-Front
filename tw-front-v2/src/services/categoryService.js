@@ -4,7 +4,7 @@ import { mockCategories } from '../data/mockProducts';
 export const categoryService = {
   getAll: async () => {
     try {
-  const { data } = await http.get('/market/model/categories/');
+  const { data } = await http.get('/market/model/categories/', { _public: true });
   return data;
     } catch {
       return mockCategories;
