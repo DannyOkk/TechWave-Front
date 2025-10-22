@@ -6,7 +6,8 @@ export default function MiniCart({ onOpen }){
 
   const load = async ()=>{
     try {
-      const data = await cartService.getCart({ noRedirect: true })
+      const isAuth = !!localStorage.getItem('access_token')
+      const data = await cartService.getCart({ noRedirect: !isAuth })
       const n = Number(data?.cantidad_items ?? (data?.items?.length || 0))
       setCount(Number.isFinite(n)? n : 0)
     } catch { setCount(0) }

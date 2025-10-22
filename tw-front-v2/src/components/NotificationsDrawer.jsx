@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { orderService } from '../services/orderService'
 
 export default function NotificationsDrawer({ open, onClose }){
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const fetchOrders = useCallback(async () => {
     if (!open) return
@@ -44,7 +45,22 @@ export default function NotificationsDrawer({ open, onClose }){
                   </div>
                   <div className="h-stack" style={{gap:6}}>
                     <Link className="btn" to={`/orders/${o.id}`}>Ver detalle</Link>
-                    <button className="btn btn-primary" onClick={async()=>{ try { await orderService.createPayment(o.id); window.dispatchEvent(new Event('orders-changed')); alert('Pago iniciado'); } catch { alert('No se pudo iniciar el pago') } }}>Completar pago</button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={async()=>{
+                        try {
+                          await orderService.createPayment(o.id)
+                        } catch (e) {
+                          // Si ya hay un pago abierto, igual navegamos a la pantalla de pago
+                        } finally {
+                          try { window.dispatchEvent(new Event('orders-changed')) } catch {}
+                          onClose?.()
+                          navigate(`/orders/${o.id}/pay`)
+                        }
+                      }}
+                    >
+                      Completar pago
+                    </button>
                     <button className="btn" onClick={async()=>{
             if (!window.confirm('¿Cancelar este pedido?')) return
             try { await orderService.cancel(o.id); setOrders(prev=> prev.filter(x=> x.id!==o.id)); window.dispatchEvent(new Event('orders-changed')); } catch { alert('No se pudo cancelar') }

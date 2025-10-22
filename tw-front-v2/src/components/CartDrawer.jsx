@@ -14,7 +14,7 @@ export default function CartDrawer({ open, onClose }){
   const load = async ()=>{
     try {
       setLoading(true)
-      const data = await cartService.getCart({ noRedirect: true })
+      const data = await cartService.getCart({ noRedirect: !isLogged })
       setCart(data)
     } catch (e){
       setError('Inicia sesión para ver tu carrito')

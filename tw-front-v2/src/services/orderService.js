@@ -16,7 +16,8 @@ const getById = async (id) => {
 };
 
 const update = async (id, payload) => {
-  const { data } = await http.put(`/market/model/orders/${id}/`, payload);
+  // Usar PATCH para actualización parcial (evita requerir campos como 'usuario')
+  const { data } = await http.patch(`/market/model/orders/${id}/`, payload);
   try { window.dispatchEvent(new Event('orders-changed')); } catch {}
   return data;
 };

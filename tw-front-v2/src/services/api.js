@@ -65,6 +65,12 @@ http.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === 401 && !originalRequest._retry) {
+      // Si ya no hay tokens (sesión cerrada), no redirigir; dejar que la UI pública maneje el estado
+      const hasAccess = Boolean(getAccessToken());
+      const hasRefresh = Boolean(getRefreshToken());
+      if (!hasAccess && !hasRefresh) {
+        return Promise.reject(error);
+      }
   // Respetar peticiones públicas o con x-no-redirect: no redirigir
   if (originalRequest?._public === true || originalRequest?.headers?.['x-no-redirect'] === 'true') {
         return Promise.reject(error);

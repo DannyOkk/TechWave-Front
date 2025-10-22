@@ -103,8 +103,20 @@ function AdminDashboard(){
     queryKey:['admin-pays', payFilter],
     queryFn: ()=> payFilter==='todos' ? paymentService.list() : paymentService.list({ estado: payFilter })
   })
-  const approveM = useMutation({ mutationFn: (id)=> paymentService.approve(id), onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-pays'] }) })
-  const rejectM = useMutation({ mutationFn: (id)=> paymentService.reject(id), onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-pays'] }) })
+  const approveM = useMutation({
+    mutationFn: (id)=> paymentService.approve(id),
+    onSuccess: ()=> {
+      qc.invalidateQueries({ queryKey:['admin-pays'] })
+      qc.invalidateQueries({ queryKey:['admin-orders'] })
+    }
+  })
+  const rejectM = useMutation({
+    mutationFn: (id)=> paymentService.reject(id),
+    onSuccess: ()=> {
+      qc.invalidateQueries({ queryKey:['admin-pays'] })
+      qc.invalidateQueries({ queryKey:['admin-orders'] })
+    }
+  })
   const cancelOrderM = useMutation({
     mutationFn: (id)=> orderService.cancel(id),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })

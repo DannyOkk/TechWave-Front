@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { orderService } from '../services/orderService';
 import { paymentService } from '../services/paymentService';
+import { authService } from '../services/authService';
 import { API_ORIGIN } from '../services/api';
 import ImageLightbox from '../components/ImageLightbox';
 
@@ -10,6 +11,7 @@ export default function PaymentPage(){
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: order } = useQuery({ queryKey:['order', id], queryFn: ()=> orderService.getById(id), enabled: !!id });
+  const { data: me, isLoading: meLoading } = useQuery({ queryKey:['me'], queryFn: authService.profile });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payment, setPayment] = useState(null);
@@ -22,7 +24,7 @@ export default function PaymentPage(){
   const [cardBrand, setCardBrand] = useState('visa');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
-  const [cvc, setCvc] = useState('');
+  const [cvv, setCvv] = useState('');
   // Transferencia (solo op number y lectura de alias)
   const [opNumber, setOpNumber] = useState('');
   // Comprobante (aparece solo después de crear intento)
@@ -49,7 +51,9 @@ export default function PaymentPage(){
     run();
   }, [id]);
 
-  const hasAddress = Boolean(order?.direccion_envio && String(order.direccion_envio).trim().length > 0);
+  // Mostrar aviso SOLO si el usuario no tiene dirección en su perfil.
+  // No usamos la dirección del pedido para este aviso (requerimiento del usuario).
+  const hasAddress = Boolean((me?.address || '').toString().trim().length > 0);
   const disabled = useMemo(()=> loading, [loading]);
 
   const startPayment = async ()=>{
@@ -122,7 +126,7 @@ export default function PaymentPage(){
           </div>
           {payment && <span className="badge">{payment.estado}</span>}
         </div>
-        {!hasAddress && (
+        {!meLoading && !hasAddress && (
           <div className="card" style={{marginTop:10, padding:10, background:'#fffbe6', color:'#7a5e00'}}>
             ⚠️ Falta dirección de envío. Podés agregarla en tu perfil.
           </div>
@@ -160,21 +164,22 @@ export default function PaymentPage(){
               <input className="input" value={cardNumber} onChange={(e)=> setCardNumber(e.target.value)} placeholder="0000 0000 0000 0000" disabled={disabled || !!payment} />
             </div>
           </div>
-          <div className="h-stack" style={{gap:8}}>
-            <div>
+          <div className="v-stack" style={{gap:4}}>
+            <div className="h-stack" style={{gap:8}}>
               <label>Vencimiento</label>
-              <div className="h-stack" style={{gap:6}}>
-                <input className="input" value={expMonth} onChange={(e)=> setExpMonth(e.target.value)} placeholder="MM" maxLength={2} style={{width:80}} disabled={disabled || !!payment} />
-                <input className="input" value={expYear} onChange={(e)=> setExpYear(e.target.value)} placeholder="AA" maxLength={2} style={{width:80}} disabled={disabled || !!payment} />
+              <div style={{ width: 78 }} />
+              <label style={{width:100}}>CVV</label>
+              <label style={{flex:1}}>Titular</label>
+            </div>
+            <div className="h-stack" style={{gap:8}}>
+              <div>
+                <div className="h-stack" style={{gap:6}}>
+                  <input className="input" value={expMonth} onChange={(e)=> setExpMonth(e.target.value)} placeholder="MM" maxLength={2} style={{width:80}} disabled={disabled || !!payment} />
+                  <input className="input" value={expYear} onChange={(e)=> setExpYear(e.target.value)} placeholder="AA" maxLength={2} style={{width:80}} disabled={disabled || !!payment} />
+                </div>
               </div>
-            </div>
-            <div>
-              <label>CVC</label>
-              <input className="input" value={cvc} onChange={(e)=> setCvc(e.target.value)} placeholder="CVC" maxLength={4} style={{width:100}} disabled={disabled || !!payment} />
-            </div>
-            <div style={{flex:1}}>
-              <label>Titular</label>
-              <input className="input" value={cardHolder} onChange={(e)=> setCardHolder(e.target.value)} placeholder="Como figura en la tarjeta" disabled={disabled || !!payment} />
+              <input className="input" value={cvv} onChange={(e)=> setCvv(e.target.value)} placeholder="CVV" maxLength={4} style={{width:100}} disabled={disabled || !!payment} />
+              <input className="input" value={cardHolder} onChange={(e)=> setCardHolder(e.target.value)} placeholder="Como figura en la tarjeta" style={{flex:1}} disabled={disabled || !!payment} />
             </div>
           </div>
           <small style={{opacity:.75}}>Se guardarán solo datos no sensibles (marca, últimos 4 y titular).</small>

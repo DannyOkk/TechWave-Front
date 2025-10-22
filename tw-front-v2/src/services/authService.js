@@ -47,7 +47,11 @@ const updateProfile = async (payload) => {
 const logout = async () => {
   try {
     const refresh = localStorage.getItem('refresh_token');
-    await http.post('/logout/', { refresh }, { headers: { 'x-skip-refresh': 'true' } });
+    await http.post(
+      '/logout/',
+      { refresh },
+      { headers: { 'x-skip-refresh': 'true', 'x-no-redirect': 'true' } }
+    );
   } catch { /* ignorar error logout */ }
   finally {
     try { localStorage.removeItem('guest_favorites'); } catch {}
