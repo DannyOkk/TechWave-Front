@@ -1,8 +1,13 @@
 import http from './api';
 
-const getCart = async () => {
+const getCart = async (opts = {}) => {
   // GET /market/model/cart/ -> retorna el carrito del usuario
-  const { data } = await http.get('/market/model/cart/');
+  // Si opts.noRedirect === true, evitar redirección automática en 401
+  const config = {};
+  if (opts.noRedirect) {
+    config.headers = { ...(config.headers || {}), 'x-no-redirect': 'true' };
+  }
+  const { data } = await http.get('/market/model/cart/', config);
   return data;
 };
 
@@ -12,9 +17,14 @@ const clearCart = async () => {
   return data;
 };
 
-const checkout = async () => {
-  const { data } = await http.post('/market/model/cart/checkout/');
-  try { window.dispatchEvent(new Event('cart-changed')); } catch {}
+// Permite pasar direccion_envio opcional para validar en backend
+const checkout = async (direccion_envio) => {
+  const payload = direccion_envio ? { direccion_envio } : undefined;
+  const { data } = await http.post('/market/model/cart/checkout/', payload);
+  try {
+    window.dispatchEvent(new Event('cart-changed'));
+    window.dispatchEvent(new Event('orders-changed'));
+  } catch {}
   return data;
 };
 

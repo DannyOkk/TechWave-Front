@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { productService } from '../services/productService';
+import { API_ORIGIN } from '../services/api';
 import { categoryService } from '../services/categoryService';
 import { cartService } from '../services/cartService';
+import useFavorites from '../hooks/useFavorite';
 
 export default function ProductsPage(){
   const [addingId, setAddingId] = useState(null);
-  const [toast, setToast] = useState('');
   const [params, setParams] = useSearchParams();
   const sort = params.get('sort') || '';
   const cat = params.get('cat') || '';
@@ -18,6 +19,32 @@ export default function ProductsPage(){
     queryFn: productService.getAll,
   });
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: categoryService.getAll });
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+
+  // Helper: si la URL es de Cloudinary, inserta transformaciones para miniatura 4:3 sin recorte (con relleno)
+  const withCloudinaryPad = (url, w = 300, h = 225) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (!u.hostname.includes('res.cloudinary.com')) return url;
+      const parts = u.pathname.split('/');
+      const idx = parts.findIndex((p) => p === 'upload');
+      if (idx === -1) return url;
+      const trans = `w_${w},h_${h},c_pad,b_auto:predominant,q_auto,f_auto,dpr_auto`;
+      // Inserta transformaciones justo después de 'upload'
+      parts.splice(idx + 1, 0, trans);
+      u.pathname = parts.join('/');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  };
+
+  const getCardImageSrc = (p) => {
+    const raw = p.imagen || (p.imagen_url ? (p.imagen_url.startsWith('http') ? p.imagen_url : `${API_ORIGIN}${p.imagen_url}`) : null);
+    const transformed = withCloudinaryPad(raw, 300, 225);
+    return transformed || '/assets/products/laptop.svg';
+  };
 
   const filtered = useMemo(()=>{
     let list = Array.isArray(products) ? products : [];
@@ -34,11 +61,7 @@ export default function ProductsPage(){
 
   return (
     <div className="v-stack" style={{gap:16, alignItems:'center'}}>
-      {toast && (
-        <div style={{position:'fixed', top:10, right:10, background:'var(--bg-tertiary)', border:'1px solid var(--border-light)', color:'var(--text-primary)', padding:'8px 12px', borderRadius:10, zIndex:1000}}>
-          {toast}
-        </div>
-      )}
+  {/* Aviso visual se maneja con popover del carrito en header */}
       <div className="toolbar" style={{justifyContent:'center', width:'100%', maxWidth:900}}>
         <h2 style={{margin:'8px 0'}}>Productos</h2>
         <div className="h-stack" style={{gap:8}}>
@@ -59,14 +82,27 @@ export default function ProductsPage(){
       {isLoading && <div style={{textAlign:'center', padding:20}}>Cargando productos…</div>}
       {isError && <div style={{textAlign:'center', padding:20}}>Error al cargar productos.</div>}
     {!isLoading && !isError && (
-    <div className="row-cards">
+    <div className="row-cards products-tiles">
   {filtered.map((p)=> (
-      <div key={p.id} className="card" style={{padding:12, width:280}}>
+      <div key={p.id} className="card" style={{padding:12}}>
             <div className="relative">
-              <Link to={`/products/${p.id}`}>
-                <img src={'/assets/products/laptop.svg'} alt={p.nombre} className="img-skel" style={{objectFit:'cover', width:'100%'}} />
-              </Link>
-              <button className="fav-btn" title="Agregar a favoritos">❤</button>
+                    <Link to={`/products/${p.id}`}>
+                      <img
+                        src={getCardImageSrc(p)}
+                        alt={p.nombre}
+                        className="img-skel"
+                        style={{ width:'100%', borderRadius:12, display:'block' }}
+                        loading="lazy"
+                      />
+                    </Link>
+              <button
+                className="fav-btn"
+                title={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                aria-label={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                aria-pressed={isFavorite(p.id)}
+                onClick={async (e)=> { e.preventDefault(); e.stopPropagation(); await toggleFavorite(p.id); }}
+                style={isFavorite(p.id) ? { background:'rgba(0,0,0,.5)', color:'#ff4d4f', borderColor:'rgba(255,77,79,.6)' } : undefined}
+              >❤</button>
             </div>
             <div style={{marginTop:10}}>
               <div style={{fontWeight:600}}><Link to={`/products/${p.id}`}>{p.nombre}</Link></div>
@@ -77,16 +113,11 @@ export default function ProductsPage(){
                 try {
                   setAddingId(p.id);
                   await cartService.addProduct(p.id, 1);
-                  setToast('Producto agregado al carrito');
+                  window.dispatchEvent(new CustomEvent('cart:add:success', { detail: { msg: 'Producto agregado al carrito' }}));
                 } catch (e){
-                  if (e?.response?.status === 401){
-                    setToast('Inicia sesión para agregar al carrito');
-                  } else {
-                    setToast('No se pudo agregar al carrito');
-                  }
+                  // Sin toast de error: mantener UI limpia
                 } finally {
                   setAddingId(null);
-                  setTimeout(()=> setToast(''), 2200);
                 }
               }}
             >{addingId===p.id? 'Agregando…' : 'Agregar'}</button>

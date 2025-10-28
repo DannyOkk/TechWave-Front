@@ -5,7 +5,10 @@ import { adminService } from '../services/adminService'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
 import { orderService } from '../services/orderService'
+import { paymentService } from '../services/paymentService'
+import { API_ORIGIN } from '../services/api'
 import Modal from '../components/Modal'
+import ImageLightbox from '../components/ImageLightbox'
 
 export default function AdminPage(){
   const navigate = useNavigate()
@@ -94,8 +97,36 @@ function AdminDashboard(){
     mutationFn: ({ id, payload })=> orderService.update(id, payload),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
+  // Pagos
+  const [payFilter, setPayFilter] = useState('todos') // default mostrar todos
+  const paysQ = useQuery({
+    queryKey:['admin-pays', payFilter],
+    queryFn: ()=> payFilter==='todos' ? paymentService.list() : paymentService.list({ estado: payFilter })
+  })
+  const approveM = useMutation({
+    mutationFn: (id)=> paymentService.approve(id),
+    onSuccess: ()=> {
+      qc.invalidateQueries({ queryKey:['admin-pays'] })
+      qc.invalidateQueries({ queryKey:['admin-orders'] })
+    }
+  })
+  const rejectM = useMutation({
+    mutationFn: (id)=> paymentService.reject(id),
+    onSuccess: ()=> {
+      qc.invalidateQueries({ queryKey:['admin-pays'] })
+      qc.invalidateQueries({ queryKey:['admin-orders'] })
+    }
+  })
   const cancelOrderM = useMutation({
     mutationFn: (id)=> orderService.cancel(id),
+    onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
+  })
+  const deleteOrderM = useMutation({
+    mutationFn: (id)=> orderService.remove(id),
+    onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
+  })
+  const forceDeleteOrderM = useMutation({
+    mutationFn: (id)=> orderService.forceDelete(id),
     onSuccess: ()=> qc.invalidateQueries({ queryKey:['admin-orders'] })
   })
 
@@ -107,10 +138,11 @@ function AdminDashboard(){
         <button className={`btn ${tab==='productos'?'btn-primary':''}`} onClick={()=> setTab('productos')}>Productos</button>
         <button className={`btn ${tab==='categorias'?'btn-primary':''}`} onClick={()=> setTab('categorias')}>Categorías</button>
         <button className={`btn ${tab==='pedidos'?'btn-primary':''}`} onClick={()=> setTab('pedidos')}>Pedidos</button>
+  <button className={`btn ${tab==='pagos'?'btn-primary':''}`} onClick={()=> setTab('pagos')}>Pagos</button>
       </div>
 
       {tab==='usuarios' && (
-        <div className="card" style={{padding:12}}>
+        <div className="card admin-users" style={{padding:12}}>
           <div className="h-stack" style={{justifyContent:'space-between', alignItems:'center'}}>
             <h3 style={{marginTop:0}}>Usuarios</h3>
             <button className="btn btn-primary" onClick={()=> setModal({ type:'user-create', open:true, payload:null })}>Nuevo usuario</button>
@@ -120,12 +152,12 @@ function AdminDashboard(){
           {!usersQ.isLoading && !usersQ.error && (
             <div className="v-stack" style={{gap:8}}>
               {(usersQ.data||[]).map(u=> (
-                <div key={u.id} className="h-stack" style={{justifyContent:'space-between'}}>
-                  <div>
+                <div key={u.id} className="h-stack user-row">
+                  <div className="admin-info">
                     <strong>{u.username}</strong> <span style={{opacity:.8}}>{u.email}</span>
                     <div style={{opacity:.75, fontSize:12}}>Rol: {u.role || (u.is_staff ? 'staff' : 'user')} · Nombre: {u.first_name||'-'} {u.last_name||''}</div>
                   </div>
-                  <div className="h-stack" style={{gap:6}}>
+                  <div className="h-stack admin-actions" style={{gap:6}}>
                     <select className="input" defaultValue={u.role||''} onChange={(e)=> changeRoleM.mutate({ id: u.id, role: e.target.value })}>
                       <option value="">(sin cambio)</option>
                       <option value="admin">admin</option>
@@ -153,12 +185,12 @@ function AdminDashboard(){
           {!productsQ.isLoading && !productsQ.error && (
             <div className="v-stack" style={{gap:10}}>
               {(productsQ.data||[]).map(p=> (
-                <div key={p.id} className="h-stack" style={{justifyContent:'space-between'}}>
-                  <div>
+                <div key={p.id} className="h-stack admin-row">
+                  <div className="admin-info">
                     <strong>{p.nombre}</strong>
                     <div style={{opacity:.8}}>${p.precio} · {p.categoria?.nombre}</div>
                   </div>
-                  <div className="h-stack" style={{gap:6}}>
+                  <div className="h-stack admin-actions" style={{gap:6}}>
                     <span className="badge">Stock: {p.stock}</span>
                     <button className="btn" onClick={()=> setModal({ type:'product-edit', open:true, payload:p })}>Editar</button>
                     <button className="btn" disabled={deleteProductM.isLoading} onClick={()=> { if (window.confirm('¿Eliminar producto?')) deleteProductM.mutate(p.id) }}>Eliminar</button>
@@ -181,9 +213,9 @@ function AdminDashboard(){
           {!categoriesQ.isLoading && !categoriesQ.error && (
             <div className="v-stack" style={{gap:8}}>
               {(categoriesQ.data||[]).map(c=> (
-                <div key={c.id} className="h-stack" style={{justifyContent:'space-between'}}>
-                  <div><strong>{c.nombre}</strong></div>
-                  <div className="h-stack" style={{gap:6}}>
+                <div key={c.id} className="h-stack admin-row">
+                  <div className="admin-info"><strong>{c.nombre}</strong></div>
+                  <div className="h-stack admin-actions" style={{gap:6}}>
                     <span className="badge">ID: {c.id}</span>
                     <button className="btn" onClick={()=> setModal({ type:'category-edit', open:true, payload:c })}>Editar</button>
                     <button className="btn" disabled={deleteCategoryM.isLoading} onClick={()=> { if (window.confirm('¿Eliminar categoría?')) deleteCategoryM.mutate(c.id) }}>Eliminar</button>
@@ -203,14 +235,14 @@ function AdminDashboard(){
           {!ordersQ.isLoading && !ordersQ.error && (
             <div className="v-stack" style={{gap:10}}>
               {(ordersQ.data||[]).map(o=> (
-                <div key={o.id} className="h-stack" style={{justifyContent:'space-between'}}>
-                  <div>
+                <div key={o.id} className="h-stack admin-row">
+                  <div className="admin-info">
                     <strong>Pedido #{o.id}</strong> <span style={{opacity:.8}}>· {o.usuario?.username || '—'}</span>
                     <div style={{opacity:.8}}>Estado: {o.estado} · Fecha: {new Date(o.fecha).toLocaleString()} · Dirección: {o.direccion_envio||'—'}</div>
                   </div>
-                  <div className="h-stack" style={{gap:6}}>
+                  <div className="h-stack admin-actions" style={{gap:6}}>
                     <span className="badge">Total: ${o.total}</span>
-                    <select className="input" defaultValue={o.estado} onChange={(e)=> updateOrderM.mutate({ id:o.id, payload:{ estado: e.target.value } })}>
+                    <select className="input" defaultValue={o.estado} disabled={o.estado==='cancelado'} onChange={(e)=> updateOrderM.mutate({ id:o.id, payload:{ estado: e.target.value } })}>
                       <option value="pendiente">pendiente</option>
                       <option value="pagado">pagado</option>
                       <option value="preparando">preparando</option>
@@ -218,12 +250,37 @@ function AdminDashboard(){
                       <option value="entregado">entregado</option>
                       <option value="cancelado">cancelado</option>
                     </select>
-                    <button className="btn" disabled={cancelOrderM.isLoading} onClick={()=> cancelOrderM.mutate(o.id)}>Cancelar</button>
+                    {o.estado !== 'cancelado' && (
+                      <button className="btn" disabled={cancelOrderM.isLoading} onClick={()=> cancelOrderM.mutate(o.id)}>Cancelar</button>
+                    )}
+                    {o.estado === 'cancelado' && (
+                      <button className="btn" style={{background:'tomato', color:'#fff'}} disabled={deleteOrderM.isLoading} onClick={()=> { if (window.confirm('¿Eliminar pedido cancelado? Esta acción es irreversible.')) deleteOrderM.mutate(o.id) }}>Eliminar</button>
+                    )}
+                    {o.estado !== 'cancelado' && (
+                      <button className="btn" style={{background:'#a00', color:'#fff'}} disabled={forceDeleteOrderM.isLoading} onClick={()=> { if (window.confirm('¿Forzar eliminación del pedido? Se restaurará el stock y se cerrarán pagos abiertos.')) forceDeleteOrderM.mutate(o.id) }}>Forzar eliminar</button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {tab==='pagos' && (
+        <div className="card" style={{padding:12}}>
+          <h3 style={{marginTop:0}}>Pagos</h3>
+          <div className="h-stack" style={{gap:8, marginBottom:8}}>
+            <label>Filtrar por estado</label>
+            <select className="input" value={payFilter} onChange={(e)=> setPayFilter(e.target.value)}>
+              <option value="en_revision">En revisión</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="completado">Completado</option>
+              <option value="fallido">Cancelado</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+          <PaymentsSection title={payFilter==='todos' ? 'Todos' : payFilter} query={paysQ} onApprove={approveM.mutate} onReject={rejectM.mutate} showActions={payFilter==='en_revision'} />
         </div>
       )}
 
@@ -252,22 +309,103 @@ function UserModal({ modal, setModal, onCreate, onUpdate }){
     ]}>
       <form id="user-form" onSubmit={submit} className="v-stack" style={{gap:10}}>
         <div className="h-stack" style={{gap:10}}>
-          <input className="input" name="first_name" placeholder="Nombre" defaultValue={data.first_name||''} />
-          <input className="input" name="last_name" placeholder="Apellido" defaultValue={data.last_name||''} />
+          <div className="form-field" style={{flex:1}}>
+            <label htmlFor="ad_user_first">Nombre</label>
+            <input id="ad_user_first" className="input" name="first_name" defaultValue={data.first_name||''} />
+          </div>
+          <div className="form-field" style={{flex:1}}>
+            <label htmlFor="ad_user_last">Apellido</label>
+            <input id="ad_user_last" className="input" name="last_name" defaultValue={data.last_name||''} />
+          </div>
         </div>
-        <input className="input" name="username" placeholder="Usuario" defaultValue={data.username||''} />
-        <input className="input" type="email" name="email" placeholder="Email" defaultValue={data.email||''} />
-        {!isEdit && <input className="input" type="password" name="password" placeholder="Contraseña (solo al crear)" />}
-        <input className="input" name="address" placeholder="Dirección" defaultValue={data.address||''} />
-        <input className="input" name="phone" placeholder="Teléfono" defaultValue={data.phone||''} />
-        <select className="input" name="role" defaultValue={data.role||''}>
-          <option value="">Rol…</option>
-          <option value="admin">admin</option>
-          <option value="operator">operator</option>
-          <option value="client">client</option>
-        </select>
+        <div className="form-field">
+          <label htmlFor="ad_user_username">Usuario</label>
+          <input id="ad_user_username" className="input" name="username" defaultValue={data.username||''} />
+        </div>
+        <div className="form-field">
+          <label htmlFor="ad_user_email">Email</label>
+          <input id="ad_user_email" className="input" type="email" name="email" defaultValue={data.email||''} />
+        </div>
+        {!isEdit && (
+          <div className="form-field">
+            <label htmlFor="ad_user_password">Contraseña (solo al crear)</label>
+            <input id="ad_user_password" className="input" type="password" name="password" />
+          </div>
+        )}
+        <div className="form-field">
+          <label htmlFor="ad_user_address">Dirección</label>
+          <input id="ad_user_address" className="input" name="address" defaultValue={data.address||''} />
+        </div>
+        <div className="form-field">
+          <label htmlFor="ad_user_phone">Teléfono</label>
+          <input id="ad_user_phone" className="input" name="phone" defaultValue={data.phone||''} />
+        </div>
+        <div className="form-field">
+          <label htmlFor="ad_user_role">Rol</label>
+          <select id="ad_user_role" className="input" name="role" defaultValue={data.role||''}>
+            <option value="">(sin cambio)</option>
+            <option value="admin">admin</option>
+            <option value="operator">operator</option>
+            <option value="client">client</option>
+          </select>
+        </div>
       </form>
     </Modal>
+  )
+}
+
+function PaymentsSection({ title, query, onApprove, onReject, showActions=false }){
+  const list = Array.isArray(query.data) ? query.data : (query.data?.results || [])
+  const [lightbox, setLightbox] = useState({ open:false, src:'' })
+  return (
+    <div>
+      <h4 style={{marginBottom:8}}>{title}</h4>
+      {query.isLoading && <div>Cargando…</div>}
+      {query.error && <div style={{color:'tomato'}}>Error al cargar</div>}
+      {!query.isLoading && !query.error && list.length===0 && <div style={{opacity:.75}}>Sin items</div>}
+      {!query.isLoading && !query.error && list.length>0 && (
+        <div className="v-stack" style={{gap:8}}>
+          {list.map(p=> (
+            <div key={p.id} className="h-stack" style={{justifyContent:'space-between', alignItems:'center'}}>
+              <div>
+                <div><strong>Pago #{p.id}</strong> · Pedido #{p.pedido} · {p.metodo} · <span className="badge">{p.estado}</span></div>
+                <div style={{fontSize:12, opacity:.8}}>Monto: ${p.monto_pagado} · {p.pedido_detalle?.fecha && new Date(p.pedido_detalle.fecha).toLocaleString()}</div>
+                {(p.comprobante_archivo_url || p.comprobante_url) && (
+                  <div style={{marginTop:6}}>
+                    {p.comprobante_archivo_url && (p.comprobante_archivo_url.toLowerCase().endsWith('.pdf') ? (
+                      <a href={p.comprobante_archivo_url.startsWith('http') ? p.comprobante_archivo_url : `${API_ORIGIN}${p.comprobante_archivo_url}`} target="_blank" rel="noreferrer">Ver PDF</a>
+                    ) : (
+                      (()=>{
+                        const src = p.comprobante_archivo_url.startsWith('http') ? p.comprobante_archivo_url : `${API_ORIGIN}${p.comprobante_archivo_url}`
+                        return (
+                          <img
+                            alt="comprobante"
+                            src={src}
+                            title="Click para ver grande"
+                            onClick={()=> setLightbox({ open:true, src })}
+                            style={{maxWidth:200, maxHeight:120, objectFit:'contain', border:'1px solid #eee', cursor:'zoom-in'}}
+                          />
+                        )
+                      })()
+                    ))}
+                    {!p.comprobante_archivo_url && p.comprobante_url && (
+                      <a href={p.comprobante_url} target="_blank" rel="noreferrer">Ver comprobante</a>
+                    )}
+                  </div>
+                )}
+              </div>
+              {showActions && (
+                <div className="h-stack admin-actions" style={{gap:6}}>
+                  <button className="btn btn-primary" onClick={()=> onApprove?.(p.id)}>Aprobar</button>
+                  <button className="btn" onClick={()=> onReject?.(p.id)}>Rechazar</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <ImageLightbox open={lightbox.open} src={lightbox.src} onClose={()=> setLightbox({ open:false, src:'' })} />
+    </div>
   )
 }
 
@@ -278,7 +416,10 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
   const close = ()=> setModal({ type:null, open:false, payload:null })
   const submit = (e)=>{
     e.preventDefault()
-    const formObj = Object.fromEntries(new FormData(e.currentTarget).entries())
+    const fd = new FormData(e.currentTarget)
+    const formObj = Object.fromEntries(fd.entries())
+    const imagen = fd.get('imagen')
+    const clearImagen = formObj.clear_imagen === 'on' || formObj.clear_imagen === true || formObj.clear_imagen === 'true'
     // Normalizar tipos
     const payload = {
       nombre: formObj.nombre,
@@ -286,6 +427,13 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
       precio: parseFloat(formObj.precio||0),
       stock: parseInt(formObj.stock||0, 10),
       categoria: parseInt(formObj.categoria, 10),
+    }
+    // Prioridad: si selecciona una nueva imagen, se sube y se ignora el clear.
+    if (imagen && imagen.size) {
+      payload.imagen = imagen
+    } else if (isEdit && clearImagen) {
+      // Si está editando y marca "eliminar imagen" sin subir nueva, mandamos null para limpiar en backend
+      payload.imagen = null
     }
     if (isEdit) onUpdate(data.id, payload); else onCreate(payload)
   }
@@ -295,16 +443,46 @@ function ProductModal({ modal, setModal, categories, onCreate, onUpdate }){
       <button key="save" className="btn btn-primary" form="product-form" type="submit">Guardar</button>
     ]}>
       <form id="product-form" onSubmit={submit} className="v-stack" style={{gap:10}}>
-        <input className="input" name="nombre" placeholder="Nombre" defaultValue={data.nombre||''} />
-        <textarea className="input" name="descripcion" placeholder="Descripción" defaultValue={data.descripcion||''} rows={3} />
-        <div className="h-stack" style={{gap:10}}>
-          <input className="input" name="precio" type="number" step="0.01" placeholder="Precio" defaultValue={data.precio||''} />
-          <input className="input" name="stock" type="number" placeholder="Stock" defaultValue={data.stock||''} />
+        <div className="form-field">
+          <label htmlFor="ad_prod_nombre">Nombre</label>
+          <input id="ad_prod_nombre" className="input" name="nombre" defaultValue={data.nombre||''} />
         </div>
-        <select className="input" name="categoria" defaultValue={data.categoria?.id || data.categoria || ''}>
-          <option value="">Categoría…</option>
-          {(categories||[]).map(c=> <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
+        <div className="form-field">
+          <label htmlFor="ad_prod_desc">Descripción</label>
+          <textarea id="ad_prod_desc" className="input" name="descripcion" defaultValue={data.descripcion||''} rows={3} />
+        </div>
+        <div className="h-stack" style={{gap:10}}>
+          <div className="form-field" style={{flex:1}}>
+            <label htmlFor="ad_prod_precio">Precio</label>
+            <input id="ad_prod_precio" className="input" name="precio" type="number" step="0.01" defaultValue={data.precio||''} />
+          </div>
+          <div className="form-field" style={{flex:1}}>
+            <label htmlFor="ad_prod_stock">Stock</label>
+            <input id="ad_prod_stock" className="input" name="stock" type="number" defaultValue={data.stock||''} />
+          </div>
+        </div>
+        <div className="form-field">
+          <label htmlFor="ad_prod_cat">Categoría</label>
+          <select id="ad_prod_cat" className="input" name="categoria" defaultValue={data.categoria?.id || data.categoria || ''}>
+            <option value="">(elige una)</option>
+            {(categories||[]).map(c=> <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          </select>
+        </div>
+        <div className="v-stack" style={{gap:6}}>
+          <label htmlFor="ad_prod_img">Imagen del producto</label>
+          <input id="ad_prod_img" className="input" type="file" name="imagen" accept="image/*" />
+          {(data.imagen_url) && (
+            <div className="h-stack" style={{gap:12, alignItems:'flex-start'}}>
+              <img alt="preview" src={data.imagen_url} style={{maxWidth:200, border:'1px solid var(--border-light)'}} />
+              {isEdit && (
+                <label style={{display:'inline-flex', gap:6, alignItems:'center', cursor:'pointer'}} title="Eliminar la imagen actual">
+                  <input type="checkbox" name="clear_imagen" />
+                  <span>Eliminar imagen actual</span>
+                </label>
+              )}
+            </div>
+          )}
+        </div>
       </form>
     </Modal>
   )
@@ -326,8 +504,14 @@ function CategoryModal({ modal, setModal, onCreate, onUpdate }){
       <button key="save" className="btn btn-primary" form="category-form" type="submit">Guardar</button>
     ]}>
       <form id="category-form" onSubmit={submit} className="v-stack" style={{gap:10}}>
-        <input className="input" name="nombre" placeholder="Nombre" defaultValue={data.nombre||''} />
-        <textarea className="input" name="descripcion" placeholder="Descripción" defaultValue={data.descripcion||''} rows={3} />
+        <div className="form-field">
+          <label htmlFor="ad_cat_nombre">Nombre</label>
+          <input id="ad_cat_nombre" className="input" name="nombre" defaultValue={data.nombre||''} />
+        </div>
+        <div className="form-field">
+          <label htmlFor="ad_cat_desc">Descripción</label>
+          <textarea id="ad_cat_desc" className="input" name="descripcion" defaultValue={data.descripcion||''} rows={3} />
+        </div>
       </form>
     </Modal>
   )

@@ -1,29 +1,46 @@
 import http from './api';
-import { mockProducts } from '../data/mockProducts';
 
 export const productService = {
   getAll: async () => {
     try {
-  const { data } = await http.get('/market/model/products/');
-  return data;
-    } catch {
-      return mockProducts;
+  const { data } = await http.get('/market/model/products/', { _public: true });
+  // Soporta respuestas paginadas del backend (DRF): { count, next, previous, results: [...] }
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
+    } catch (e) {
+      return [];
     }
   },
   getById: async (id) => {
     try {
-  const { data } = await http.get(`/market/model/products/${id}/`);
-  return data;
-    } catch {
-      return mockProducts.find(p => String(p.id) === String(id));
+  const { data } = await http.get(`/market/model/products/${id}/`, { _public: true });
+      return data;
+    } catch (e) {
+      return null;
     }
   },
   create: async (payload) => {
-    const { data } = await http.post('/market/model/products/', payload);
+    // Payload puede ser { nombre, descripcion, precio, stock, categoria, imagen? }
+    let body = payload; let config={}
+    if (payload?.imagen instanceof File){
+      const fd = new FormData()
+      Object.entries(payload).forEach(([k,v])=>{ if (k==='imagen') return; fd.append(k, v) })
+      fd.append('imagen', payload.imagen)
+      body = fd; config.headers = { 'Content-Type': 'multipart/form-data' }
+    }
+    const { data } = await http.post('/market/model/products/', body, config);
     return data;
   },
   update: async (id, payload) => {
-    const { data } = await http.patch(`/market/model/products/${id}/`, payload);
+    let body = payload; let config={}
+    if (payload?.imagen instanceof File){
+      const fd = new FormData()
+      Object.entries(payload).forEach(([k,v])=>{ if (k==='imagen') return; fd.append(k, v) })
+      fd.append('imagen', payload.imagen)
+      body = fd; config.headers = { 'Content-Type': 'multipart/form-data' }
+    }
+    const { data } = await http.patch(`/market/model/products/${id}/`, body, config);
     return data;
   },
   remove: async (id) => {

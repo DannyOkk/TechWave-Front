@@ -6,7 +6,8 @@ export default function MiniCart({ onOpen }){
 
   const load = async ()=>{
     try {
-      const data = await cartService.getCart()
+      const isAuth = !!localStorage.getItem('access_token')
+      const data = await cartService.getCart({ noRedirect: !isAuth })
       const n = Number(data?.cantidad_items ?? (data?.items?.length || 0))
       setCount(Number.isFinite(n)? n : 0)
     } catch { setCount(0) }
@@ -21,7 +22,7 @@ export default function MiniCart({ onOpen }){
 
   return (
     <button className="btn btn-ghost h-stack" style={{gap:6, position:'relative'}} onClick={onOpen} aria-label="Abrir carrito">
-      <span role="img" aria-label="cart">🛒</span>
+      <span className="emoji" role="img" aria-label="cart">🛒</span>
       <span style={{opacity:.85}}>{count}</span>
     </button>
   )

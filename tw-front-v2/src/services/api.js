@@ -1,11 +1,12 @@
 import axios from 'axios';
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 // Axios instance con baseURL
 const http = axios.create({
   baseURL: API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  // No establecer Content-Type global para evitar preflights innecesarios en GET
   withCredentials: false,
 });
 
@@ -36,7 +37,9 @@ const redirectToLogin = () => {
 // Interceptor de request: agrega Authorization si hay token
 http.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Permite marcar peticiones públicas para no enviar Authorization (evita preflight y 401 innecesarios)
+  const isPublic = Boolean(config._public);
+  if (token && !isPublic) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -62,6 +65,17 @@ http.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === 401 && !originalRequest._retry) {
+      // Si ya no hay tokens (sesión cerrada), no redirigir; dejar que la UI pública maneje el estado
+      const hasAccess = Boolean(getAccessToken());
+      const hasRefresh = Boolean(getRefreshToken());
+      if (!hasAccess && !hasRefresh) {
+        return Promise.reject(error);
+      }
+  // Respetar peticiones públicas o con x-no-redirect: no redirigir
+  if (originalRequest?._public === true || originalRequest?.headers?.['x-no-redirect'] === 'true') {
+        return Promise.reject(error);
+      }
+
       if (originalRequest?.headers?.['x-skip-refresh'] === 'true') {
         // Peticiones que explícitamente no deben refrescar
         clearAuth();
