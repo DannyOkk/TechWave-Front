@@ -10,21 +10,21 @@ export default function Footer(){
           </div>
           <div className="v-stack" style={{minWidth:200}}>
             <strong>Soporte</strong>
-            <a className="link" href="#">Centro de ayuda</a>
-            <a className="link" href="#">Garantías</a>
-            <a className="link" href="#">Envíos y devoluciones</a>
+            <a className="link" href="/help">Centro de ayuda</a>
+            <a className="link" href="/guarantees">Garantías</a>
+            <a className="link" href="/shipping-returns">Envíos y devoluciones</a>
           </div>
           <div className="v-stack" style={{minWidth:200}}>
             <strong>Empresa</strong>
-            <a className="link" href="#">Nosotros</a>
-            <a className="link" href="#">Trabajá con nosotros</a>
-            <a className="link" href="#">Términos y privacidad</a>
+            <a className="link" href="/about">Nosotros</a>
+            <a className="link" href="/work-with-us">Trabajá con nosotros</a>
+            <a className="link" href="/terms">Términos y privacidad</a>
           </div>
           <div className="v-stack" style={{minWidth:200}}>
             <strong>Redes</strong>
-            <a className="link" href="#">Instagram</a>
-            <a className="link" href="#">Twitter / X</a>
-            <a className="link" href="#">YouTube</a>
+            <a className="link" href="https://www.instagram.com/techwave">Instagram</a>
+            <a className="link" href="https://twitter.com/techwave">Twitter / X</a>
+            <a className="link" href="https://www.youtube.com/techwave">YouTube</a>
           </div>
         </div>
         <div style={{marginTop:18, textAlign:'center', opacity:.8}}>© {new Date().getFullYear()} TechWave</div>

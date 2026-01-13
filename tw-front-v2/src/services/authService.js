@@ -1,4 +1,5 @@
 import http, { saveTokens, clearAuth } from './api';
+import favoriteService, { getGuestFavorites } from './favoriteService';
 
 const login = async ({ username, password }) => {
   const { data } = await http.post('/login/', { username, password }); // TokenObtainPairView
@@ -13,6 +14,14 @@ const login = async ({ username, password }) => {
         localStorage.setItem('user_data', JSON.stringify(me));
       }
     } catch { /* ignore */ }
+    // Merge de favoritos guest (si existen) hacia el backend
+    try {
+      const guestFavs = getGuestFavorites();
+      if (Array.isArray(guestFavs) && guestFavs.length) {
+        await favoriteService.bulkMerge(guestFavs);
+        favoriteService.clearGuest();
+      }
+    } catch { /* noop */ }
   }
   return data;
 };
@@ -39,7 +48,9 @@ const logout = async () => {
   try {
     const refresh = localStorage.getItem('refresh_token');
     await http.post('/logout/', { refresh }, { headers: { 'x-skip-refresh': 'true' } });
-  } finally {
+  } catch { /* ignorar error logout */ }
+  finally {
+    try { localStorage.removeItem('guest_favorites'); } catch {}
     clearAuth();
   }
 };

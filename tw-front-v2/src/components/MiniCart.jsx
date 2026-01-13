@@ -21,7 +21,7 @@ export default function MiniCart({ onOpen }){
 
   return (
     <button className="btn btn-ghost h-stack" style={{gap:6, position:'relative'}} onClick={onOpen} aria-label="Abrir carrito">
-      <span role="img" aria-label="cart">🛒</span>
+      <span className="emoji" role="img" aria-label="cart">🛒</span>
       <span style={{opacity:.85}}>{count}</span>
     </button>
   )
